@@ -1,0 +1,33 @@
+name: Bible Art App CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install SQLite
+        run: sudo apt-get install sqlite3
+
+      - name: Validate SQL schema
+        run: |
+          if [ -f database/bible_art_seed.sql ]; then
+            sqlite3 test.db < database/bible_art_seed.sql
+            echo "Database schema loaded successfully"
+          else
+            echo "SQL file not found"
+            exit 1
+          fi
