@@ -1,0 +1,23 @@
+name: Bible Art CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-db:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install SQLite
+        run: sudo apt-get update && sudo apt-get install -y sqlite3
+
+      - name: Validate database schema
+        run: |
+          sqlite3 test.db < database/bible_art_seed.sql
+          echo "Schema validated successfully"
