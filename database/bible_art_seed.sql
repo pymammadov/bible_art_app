@@ -1,8 +1,16 @@
+DROP TABLE IF EXISTS story_artworks;
+DROP TABLE IF EXISTS story_locations;
+DROP TABLE IF EXISTS story_characters;
+DROP TABLE IF EXISTS artworks;
+DROP TABLE IF EXISTS locations;
+DROP TABLE IF EXISTS characters;
+DROP TABLE IF EXISTS stories;
+
 CREATE TABLE stories (
     id INTEGER PRIMARY KEY,
     title TEXT NOT NULL,
-    testament TEXT,
-    description TEXT
+    testament TEXT NOT NULL,
+    summary TEXT NOT NULL
 );
 
 CREATE TABLE characters (
@@ -22,20 +30,30 @@ CREATE TABLE artworks (
     title TEXT NOT NULL,
     artist TEXT,
     year INTEGER,
+    museum TEXT,
     description TEXT
 );
 
 CREATE TABLE story_characters (
-    story_id INTEGER,
-    character_id INTEGER
+    story_id INTEGER NOT NULL,
+    character_id INTEGER NOT NULL,
+    PRIMARY KEY (story_id, character_id),
+    FOREIGN KEY (story_id) REFERENCES stories(id),
+    FOREIGN KEY (character_id) REFERENCES characters(id)
 );
 
 CREATE TABLE story_locations (
-    story_id INTEGER,
-    location_id INTEGER
+    story_id INTEGER NOT NULL,
+    location_id INTEGER NOT NULL,
+    PRIMARY KEY (story_id, location_id),
+    FOREIGN KEY (story_id) REFERENCES stories(id),
+    FOREIGN KEY (location_id) REFERENCES locations(id)
 );
 
 CREATE TABLE story_artworks (
-    story_id INTEGER,
-    artwork_id INTEGER
+    story_id INTEGER NOT NULL,
+    artwork_id INTEGER NOT NULL,
+    PRIMARY KEY (story_id, artwork_id),
+    FOREIGN KEY (story_id) REFERENCES stories(id),
+    FOREIGN KEY (artwork_id) REFERENCES artworks(id)
 );
