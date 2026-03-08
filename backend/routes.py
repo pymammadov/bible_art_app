@@ -25,7 +25,7 @@ def _story_relationships(story_id: int) -> dict[str, list[dict[str, Any]]]:
     with get_connection() as conn:
         characters = conn.execute(
             """
-            SELECT c.id, c.name, c.description
+            SELECT c.id, c.name, c.testament, c.description
             FROM characters c
             JOIN story_characters sc ON sc.character_id = c.id
             WHERE sc.story_id = ?
@@ -35,7 +35,7 @@ def _story_relationships(story_id: int) -> dict[str, list[dict[str, Any]]]:
         ).fetchall()
         locations = conn.execute(
             """
-            SELECT l.id, l.name, l.description
+            SELECT l.id, l.name, l.region, l.description
             FROM locations l
             JOIN story_locations sl ON sl.location_id = l.id
             WHERE sl.story_id = ?
@@ -45,7 +45,8 @@ def _story_relationships(story_id: int) -> dict[str, list[dict[str, Any]]]:
         ).fetchall()
         artworks = conn.execute(
             """
-            SELECT a.id, a.title, a.artist, a.year, a.description
+            SELECT a.id, a.title, a.artist, a.year, a.medium, a.current_location,
+                   a.description, a.related_story_id
             FROM artworks a
             JOIN story_artworks sa ON sa.artwork_id = a.id
             WHERE sa.story_id = ?
@@ -64,7 +65,7 @@ def _character_relationships(character_id: int) -> dict[str, list[dict[str, Any]
     with get_connection() as conn:
         stories = conn.execute(
             """
-            SELECT s.id, s.title, s.testament, s.description
+            SELECT s.id, s.title, s.testament, s.scripture_reference, s.summary, s.description
             FROM stories s
             JOIN story_characters sc ON sc.story_id = s.id
             WHERE sc.character_id = ?
@@ -79,7 +80,7 @@ def _location_relationships(location_id: int) -> dict[str, list[dict[str, Any]]]
     with get_connection() as conn:
         stories = conn.execute(
             """
-            SELECT s.id, s.title, s.testament, s.description
+            SELECT s.id, s.title, s.testament, s.scripture_reference, s.summary, s.description
             FROM stories s
             JOIN story_locations sl ON sl.story_id = s.id
             WHERE sl.location_id = ?
@@ -90,11 +91,11 @@ def _location_relationships(location_id: int) -> dict[str, list[dict[str, Any]]]
     return {"stories": [dict(row) for row in stories]}
 
 
-def _artwork_relationships(artwork_id: int) -> dict[str, list[dict[str, Any]]]:
+def _artwork_relationships(artwork_id: int) -> dict[str, Any]:
     with get_connection() as conn:
         stories = conn.execute(
             """
-            SELECT s.id, s.title, s.testament, s.description
+            SELECT s.id, s.title, s.testament, s.scripture_reference, s.summary, s.description
             FROM stories s
             JOIN story_artworks sa ON sa.story_id = s.id
             WHERE sa.artwork_id = ?
@@ -102,7 +103,20 @@ def _artwork_relationships(artwork_id: int) -> dict[str, list[dict[str, Any]]]:
             """,
             (artwork_id,),
         ).fetchall()
-    return {"stories": [dict(row) for row in stories]}
+        related_story = conn.execute(
+            """
+            SELECT s.id, s.title, s.testament, s.scripture_reference
+            FROM stories s
+            JOIN artworks a ON a.related_story_id = s.id
+            WHERE a.id = ?
+            """,
+            (artwork_id,),
+        ).fetchone()
+
+    return {
+        "stories": [dict(row) for row in stories],
+        "related_story": dict(related_story) if related_story else None,
+    }
 
 
 @router.get("/stories")
@@ -131,7 +145,7 @@ def list_stories(
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     stories = _fetch_all(
         f"""
-        SELECT s.id, s.title, s.testament, s.description
+        SELECT s.id, s.title, s.testament, s.scripture_reference, s.summary, s.description
         FROM stories s
         {where_clause}
         ORDER BY s.id
@@ -149,7 +163,7 @@ def list_stories(
 def get_story(story_id: int) -> dict[str, Any]:
     story = _fetch_one(
         """
-        SELECT id, title, testament, description
+        SELECT id, title, testament, scripture_reference, summary, description
         FROM stories
         WHERE id = ?
         """,
@@ -177,7 +191,7 @@ def list_characters(story_id: int | None = Query(default=None), name: str | None
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     characters = _fetch_all(
         f"""
-        SELECT c.id, c.name, c.description
+        SELECT c.id, c.name, c.testament, c.description
         FROM characters c
         {where_clause}
         ORDER BY c.name
@@ -195,7 +209,7 @@ def list_characters(story_id: int | None = Query(default=None), name: str | None
 def get_character(character_id: int) -> dict[str, Any]:
     character = _fetch_one(
         """
-        SELECT id, name, description
+        SELECT id, name, testament, description
         FROM characters
         WHERE id = ?
         """,
@@ -223,7 +237,7 @@ def list_locations(story_id: int | None = Query(default=None), name: str | None 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     locations = _fetch_all(
         f"""
-        SELECT l.id, l.name, l.description
+        SELECT l.id, l.name, l.region, l.description
         FROM locations l
         {where_clause}
         ORDER BY l.name
@@ -241,7 +255,7 @@ def list_locations(story_id: int | None = Query(default=None), name: str | None 
 def get_location(location_id: int) -> dict[str, Any]:
     location = _fetch_one(
         """
-        SELECT id, name, description
+        SELECT id, name, region, description
         FROM locations
         WHERE id = ?
         """,
@@ -258,6 +272,7 @@ def get_location(location_id: int) -> dict[str, Any]:
 def list_artworks(
     story_id: int | None = Query(default=None),
     artist: str | None = Query(default=None),
+    related_story_id: int | None = Query(default=None),
 ) -> dict[str, Any]:
     conditions: list[str] = []
     params: list[Any] = []
@@ -268,11 +283,15 @@ def list_artworks(
     if artist:
         conditions.append("a.artist LIKE ?")
         params.append(f"%{artist}%")
+    if related_story_id is not None:
+        conditions.append("a.related_story_id = ?")
+        params.append(related_story_id)
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     artworks = _fetch_all(
         f"""
-        SELECT a.id, a.title, a.artist, a.year, a.description
+        SELECT a.id, a.title, a.artist, a.year, a.medium, a.current_location,
+               a.description, a.related_story_id
         FROM artworks a
         {where_clause}
         ORDER BY a.title
@@ -290,7 +309,7 @@ def list_artworks(
 def get_artwork(artwork_id: int) -> dict[str, Any]:
     artwork = _fetch_one(
         """
-        SELECT id, title, artist, year, description
+        SELECT id, title, artist, year, medium, current_location, description, related_story_id
         FROM artworks
         WHERE id = ?
         """,
