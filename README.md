@@ -20,7 +20,7 @@ This project aims to become a searchable discovery app that connects:
 
 ## Current status
 
-This repository now includes a minimal FastAPI backend that serves Bible stories, characters, locations, and artworks from SQLite.
+This repository includes a FastAPI backend backed by SQLite, plus a comprehensive starter seed dataset across stories, characters, locations, and artworks.
 
 ## Run backend locally
 
@@ -29,10 +29,16 @@ This repository now includes a minimal FastAPI backend that serves Bible stories
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install fastapi "uvicorn[standard]"
+pip install -r requirements.txt
 ```
 
-### 2) Start the API
+### 2) Reseed local database (recommended)
+
+```bash
+python scripts/reseed_db.py
+```
+
+### 3) Start the API
 
 From the repository root:
 
@@ -44,7 +50,12 @@ The API will be available at:
 - `http://127.0.0.1:8000`
 - interactive docs at `http://127.0.0.1:8000/docs`
 
-> On startup, the backend initializes `database/bible_art.db` from `database/bible_art_seed.sql` if the DB file does not exist.
+## Data model highlights
+
+- `stories` now include `scripture_reference` and `summary`.
+- `locations` include `region`.
+- `artworks` include `medium`, `current_location`, and `related_story_id`.
+- `related_story_id` provides a direct story pointer for artwork-centric API clients.
 
 ## API endpoints
 
@@ -67,7 +78,23 @@ All endpoints return JSON.
 
 ### Artworks
 - `GET /artworks`
-  - Optional filters: `story_id`, `artist`
+  - Optional filters: `story_id`, `artist`, `related_story_id`
 - `GET /artworks/{id}`
 
 Each resource includes a `relationships` object so clients can navigate connected entities.
+For artworks, `relationships.related_story` is also returned when `related_story_id` is set.
+
+## Basic validation
+
+After reseeding, you can run a quick sanity check:
+
+```bash
+python - <<'PY'
+from backend.db import get_connection
+
+with get_connection() as conn:
+    for table in ("stories", "characters", "locations", "artworks"):
+        count = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+        print(table, count)
+PY
+```
