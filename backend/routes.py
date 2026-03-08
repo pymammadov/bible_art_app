@@ -45,7 +45,7 @@ def _story_relationships(story_id: int) -> dict[str, list[dict[str, Any]]]:
         ).fetchall()
         artworks = conn.execute(
             """
-            SELECT a.id, a.title, a.artist, a.year, a.museum, a.description
+            SELECT a.id, a.title, a.artist, a.year, a.museum, a.related_story_id, a.description
             FROM artworks a
             JOIN story_artworks sa ON sa.artwork_id = a.id
             WHERE sa.story_id = ?
@@ -272,7 +272,7 @@ def list_artworks(
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     artworks = _fetch_all(
         f"""
-        SELECT a.id, a.title, a.artist, a.year, a.museum, a.description
+        SELECT a.id, a.title, a.artist, a.year, a.museum, a.related_story_id, a.description
         FROM artworks a
         {where_clause}
         ORDER BY a.title
@@ -290,7 +290,7 @@ def list_artworks(
 def get_artwork(artwork_id: int) -> dict[str, Any]:
     artwork = _fetch_one(
         """
-        SELECT id, title, artist, year, museum, description
+        SELECT id, title, artist, year, museum, related_story_id, description
         FROM artworks
         WHERE id = ?
         """,

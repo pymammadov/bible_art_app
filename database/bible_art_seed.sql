@@ -15,13 +15,13 @@ CREATE TABLE stories (
 
 CREATE TABLE characters (
     id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     description TEXT
 );
 
 CREATE TABLE locations (
     id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     description TEXT
 );
 
@@ -31,7 +31,9 @@ CREATE TABLE artworks (
     artist TEXT,
     year INTEGER,
     museum TEXT,
-    description TEXT
+    related_story_id INTEGER,
+    description TEXT,
+    FOREIGN KEY (related_story_id) REFERENCES stories(id)
 );
 
 CREATE TABLE story_characters (

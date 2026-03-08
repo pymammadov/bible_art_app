@@ -76,4 +76,6 @@ All endpoints return JSON.
   - Optional filters: `story_id`, `artist`
 - `GET /artworks/{id}`
 
+Seeded artwork rows include `title`, `artist`, `year`, `museum`, and `related_story_id`.
+
 Each resource includes a `relationships` object so clients can navigate connected entities.
