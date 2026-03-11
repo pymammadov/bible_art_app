@@ -1,5 +1,6 @@
 PRAGMA foreign_keys = ON;
 
+DROP TABLE IF EXISTS entity_links;
 DROP TABLE IF EXISTS story_artworks;
 DROP TABLE IF EXISTS story_locations;
 DROP TABLE IF EXISTS story_characters;
@@ -79,6 +80,17 @@ CREATE TABLE story_artworks (
     PRIMARY KEY (story_id, artwork_id),
     FOREIGN KEY (story_id) REFERENCES stories(id),
     FOREIGN KEY (artwork_id) REFERENCES artworks(id)
+);
+
+
+CREATE TABLE entity_links (
+    id INTEGER PRIMARY KEY,
+    source_type TEXT NOT NULL,
+    source_id INTEGER NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id INTEGER NOT NULL,
+    relation_type TEXT NOT NULL,
+    evidence TEXT
 );
 
 INSERT INTO stories (id, title, testament, scripture_reference, summary, description) VALUES
@@ -358,3 +370,26 @@ attribution = CASE id
     WHEN 24 THEN 'Public domain image via Wikimedia Commons.'
     ELSE attribution
 END;
+
+
+INSERT INTO entity_links (source_type, source_id, target_type, target_id, relation_type, evidence)
+SELECT 'story', story_id, 'character', character_id, 'involves_character', 'seed:story_characters'
+FROM story_characters;
+
+INSERT INTO entity_links (source_type, source_id, target_type, target_id, relation_type, evidence)
+SELECT 'story', story_id, 'location', location_id, 'takes_place_in', 'seed:story_locations'
+FROM story_locations;
+
+INSERT INTO entity_links (source_type, source_id, target_type, target_id, relation_type, evidence)
+SELECT 'story', story_id, 'artwork', artwork_id, 'inspired_artwork', 'seed:story_artworks'
+FROM story_artworks;
+
+INSERT INTO entity_links (source_type, source_id, target_type, target_id, relation_type, evidence)
+SELECT 'artwork', id, 'story', related_story_id, 'depicts_primary_story', 'seed:artworks.related_story_id'
+FROM artworks
+WHERE related_story_id IS NOT NULL;
+
+INSERT INTO entity_links (source_type, source_id, target_type, target_id, relation_type, evidence)
+SELECT 'artwork', id, 'institution', institution_id, 'held_by_institution', 'seed:artworks.institution_id'
+FROM artworks
+WHERE institution_id IS NOT NULL;

@@ -61,6 +61,10 @@ def main() -> None:
         if nullable_metadata_count < 1:
             raise SystemExit("Expected at least one artwork with ingestion metadata (image/source/attribution)")
 
+        entity_links_count = scalar(conn, "SELECT COUNT(*) FROM entity_links")
+        if entity_links_count < 1:
+            raise SystemExit("Expected at least one graph relationship record in entity_links")
+
     print("Validation checks passed.")
 
 

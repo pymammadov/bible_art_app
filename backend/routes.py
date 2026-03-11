@@ -21,6 +21,47 @@ def _fetch_one(query: str, params: tuple[Any, ...]) -> dict[str, Any] | None:
     return dict(row) if row else None
 
 
+
+
+def _graph_edges(entity_type: str, entity_id: int) -> list[dict[str, Any]]:
+    with get_connection() as conn:
+        edges = conn.execute(
+            """
+            SELECT relation_type, evidence,
+                   target_type AS related_type,
+                   target_id AS related_id,
+                   'outgoing' AS direction
+            FROM entity_links
+            WHERE source_type = ? AND source_id = ?
+            UNION ALL
+            SELECT relation_type, evidence,
+                   source_type AS related_type,
+                   source_id AS related_id,
+                   'incoming' AS direction
+            FROM entity_links
+            WHERE target_type = ? AND target_id = ?
+            ORDER BY relation_type, related_type, related_id
+            """,
+            (entity_type, entity_id, entity_type, entity_id),
+        ).fetchall()
+    return [dict(row) for row in edges]
+
+
+def _enrich_detail_relationships(base: dict[str, Any], entity_type: str, entity_id: int) -> dict[str, Any]:
+    relationship_counts: dict[str, int] = {}
+    for key, value in base.items():
+        if isinstance(value, list):
+            relationship_counts[key] = len(value)
+        elif value is not None:
+            relationship_counts[key] = 1
+    base["relationship_counts"] = relationship_counts
+    base["graph"] = {
+        "entity": {"type": entity_type, "id": entity_id},
+        "edges": _graph_edges(entity_type, entity_id),
+    }
+    return base
+
+
 def _story_relationships(story_id: int) -> dict[str, list[dict[str, Any]]]:
     with get_connection() as conn:
         characters = conn.execute(
@@ -183,7 +224,7 @@ def get_story(story_id: int) -> dict[str, Any]:
     if not story:
         raise HTTPException(status_code=404, detail="Story not found")
 
-    story["relationships"] = _story_relationships(story_id)
+    story["relationships"] = _enrich_detail_relationships(_story_relationships(story_id), "story", story_id)
     return story
 
 
@@ -229,7 +270,7 @@ def get_character(character_id: int) -> dict[str, Any]:
     if not character:
         raise HTTPException(status_code=404, detail="Character not found")
 
-    character["relationships"] = _character_relationships(character_id)
+    character["relationships"] = _enrich_detail_relationships(_character_relationships(character_id), "character", character_id)
     return character
 
 
@@ -275,7 +316,7 @@ def get_location(location_id: int) -> dict[str, Any]:
     if not location:
         raise HTTPException(status_code=404, detail="Location not found")
 
-    location["relationships"] = _location_relationships(location_id)
+    location["relationships"] = _enrich_detail_relationships(_location_relationships(location_id), "location", location_id)
     return location
 
 
@@ -331,7 +372,7 @@ def get_artwork(artwork_id: int) -> dict[str, Any]:
     if not artwork:
         raise HTTPException(status_code=404, detail="Artwork not found")
 
-    artwork["relationships"] = _artwork_relationships(artwork_id)
+    artwork["relationships"] = _enrich_detail_relationships(_artwork_relationships(artwork_id), "artwork", artwork_id)
     return artwork
 
 
@@ -380,5 +421,5 @@ def get_institution(institution_id: int) -> dict[str, Any]:
         """,
         (institution_id,),
     )
-    institution["relationships"] = {"artworks": artworks}
+    institution["relationships"] = _enrich_detail_relationships({"artworks": artworks}, "institution", institution_id)
     return institution

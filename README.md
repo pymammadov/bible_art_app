@@ -153,6 +153,35 @@ Expected JSONL keys (normalized):
 
 This keeps the existing artworks model compatible while enabling phased ingestion work.
 
+
+## Lightweight knowledge graph model
+
+The app remains relational (SQLite) but now includes a graph-friendly edge table:
+
+- `entity_links(source_type, source_id, target_type, target_id, relation_type, evidence)`
+
+This table stores semantic links between entities such as:
+- story -> character (`involves_character`)
+- story -> location (`takes_place_in`)
+- story -> artwork (`inspired_artwork`)
+- artwork -> story (`depicts_primary_story`)
+- artwork -> institution (`held_by_institution`)
+
+Detail endpoints now include richer relationship metadata:
+- `relationships.relationship_counts`
+- `relationships.graph.entity`
+- `relationships.graph.edges` (incoming + outgoing typed edges)
+
+### Schema recommendations (next incremental steps)
+
+To evolve further without moving to a graph database:
+
+1. Add `created_at` / `updated_at` timestamps to `entity_links`.
+2. Add optional `confidence` and `source_dataset` columns for provenance quality scoring.
+3. Add unique index on `(source_type, source_id, target_type, target_id, relation_type)` to prevent duplicates.
+4. Add API filters for edge traversal (e.g. by `relation_type`, `direction`).
+5. Add dedicated `/graph/neighbors` endpoint for lightweight traversal use-cases.
+
 ## Frontend Setup
 
 ```bash
