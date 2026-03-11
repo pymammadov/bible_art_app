@@ -1,12 +1,15 @@
-const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const DEFAULT_API_BASE_URL = 'http://127.0.0.1:8000';
+const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL;
 const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '');
+const REQUEST_TIMEOUT_MS = 10000;
 
-async function request(path) {
-  const response = await fetch(`${API_BASE_URL}${path}`);
-  if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+class ApiError extends Error {
+  constructor(message, status = null, payload = null) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.payload = payload;
   }
-  return response.json();
 }
 
 function toQueryString(params = {}) {
@@ -20,6 +23,59 @@ function toQueryString(params = {}) {
   return encoded ? `?${encoded}` : '';
 }
 
+async function parseResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+
+  if (!isJson) {
+    return null;
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function request(path, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+    });
+
+    const payload = await parseResponse(response);
+
+    if (!response.ok) {
+      const detail = payload?.detail;
+      const message = typeof detail === 'string' ? detail : `Request failed with status ${response.status}`;
+      throw new ApiError(message, response.status, payload);
+    }
+
+    if (!payload) {
+      throw new ApiError('API returned a non-JSON response.', response.status);
+    }
+
+    return payload;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new ApiError('Request timed out. Please try again.');
+    }
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError('Network error. Please check your connection and API URL.');
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export function getStories(params = {}) {
   return request(`/stories${toQueryString(params)}`);
 }
@@ -27,3 +83,5 @@ export function getStories(params = {}) {
 export function getStoryById(storyId) {
   return request(`/stories/${storyId}`);
 }
+
+export { API_BASE_URL, ApiError };

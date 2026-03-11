@@ -123,17 +123,23 @@ Frontend URL: `http://127.0.0.1:5173`
 
 ### API configuration
 
-Frontend reads API base URL from:
+Frontend reads API base URL from `VITE_API_BASE_URL`.
+If not set, it defaults to `http://127.0.0.1:8000`.
 
-```bash
-VITE_API_BASE_URL
-```
-
-Example:
+Quick run example:
 
 ```bash
 VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev
 ```
+
+Optional `.env.local` in `frontend/`:
+
+```bash
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
+
+The frontend now includes request timeout handling, more descriptive API error messages,
+and a global error boundary to reduce blank-screen failures.
 
 ## Notes
 
