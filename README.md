@@ -88,6 +88,7 @@ CORS_DEV_MODE=true uvicorn backend.main:app --reload
 - `GET /artworks/{id}`
 - `GET /institutions`
 - `GET /institutions/{id}`
+- `GET /search`
 
 All endpoints return JSON and support filtering where appropriate.
 Detailed endpoints include a `relationships` object.
@@ -206,6 +207,48 @@ Future map component guidance:
 2. Render each point with a tooltip containing `name`, `region`, and `certainty_level`.
 3. Keep a side list for `/locations?has_coordinates=false` so uncertain places are still discoverable.
 4. Use `certainty_level` to vary marker style (e.g. solid/high vs dashed/traditional).
+
+
+## AI-assisted search scaffold
+
+A lightweight natural-language search layer is now scaffolded without external vector infrastructure.
+
+### Current architecture
+
+- `backend/search.py` contains `SemanticSearchService`
+- `GET /search` accepts natural language query (`q`)
+- current engine uses keyword fallback with small query expansion (e.g. `kings` -> `king`, `david`, `solomon`)
+- search runs across stories, characters, locations, and artworks
+- response already includes `embedding_ready` metadata for future vector search wiring
+
+### Integration points for future embeddings
+
+1. **Corpus generation**: use `SemanticSearchService.build_corpus()` as canonical document stream.
+2. **Embedding generation**: embed corpus text with provider chosen by env (`EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`).
+3. **Index storage**: start with SQLite-backed table (or sidecar files) before moving to external vector DB.
+4. **Hybrid retrieval**: combine vector similarity + existing keyword score.
+5. **Reranking**: optional reranker stage before returning final hits.
+
+### Staged implementation plan
+
+- **Stage 1 (now)**: keyword fallback + NL query endpoint (`/search`) and corpus preview tooling.
+- **Stage 2**: persist embeddings locally and add vector similarity retrieval in SQLite-compatible form.
+- **Stage 3**: hybrid ranking + relation-aware boosting using `entity_links`.
+- **Stage 4**: optional external vector backend behind same search service interface.
+
+### Developer utilities
+
+Generate a local corpus preview for inspection:
+
+```bash
+python scripts/build_search_corpus_stub.py
+```
+
+Run a natural-language search query:
+
+```bash
+curl 'http://127.0.0.1:8000/search?q=artworks%20related%20to%20Moses'
+```
 
 ## Frontend Setup
 

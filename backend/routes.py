@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query
 
 from .db import get_connection
+from .search import search_service
 
 router = APIRouter()
 
@@ -431,3 +432,12 @@ def get_institution(institution_id: int) -> dict[str, Any]:
     )
     institution["relationships"] = _enrich_detail_relationships({"artworks": artworks}, "institution", institution_id)
     return institution
+
+
+@router.get("/search")
+def semantic_search(
+    q: str = Query(..., min_length=2, description="Natural language search query"),
+    limit: int = Query(default=20, ge=1, le=100),
+    mode: str = Query(default="auto", description="Search mode: auto|keyword|semantic"),
+) -> dict[str, Any]:
+    return search_service.search(query=q, limit=limit, mode=mode)
