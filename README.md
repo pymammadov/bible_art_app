@@ -1,30 +1,27 @@
 # Bible Art App
 
-A database-first project for mapping:
+Bible Art App is a full-stack MVP for exploring links between biblical stories, characters, locations, and artworks.
 
-- Old Testament stories
-- New Testament stories
-- biblical characters
-- probable historical/traditional locations
-- artworks inspired by biblical narratives
+## Stack
 
-## Project goal
+- Python 3.11+
+- FastAPI
+- SQLite
+- React + Vite
+- React Router
+- Tailwind CSS
 
-This project aims to become a searchable discovery app that connects:
+## Project Structure
 
-- stories
-- characters
-- locations
-- artworks
-- institutions and galleries
+- `backend/` FastAPI application and API routes
+- `database/` SQLite file + seed SQL
+- `frontend/` React client
+- `scripts/` operational scripts (seed/reseed/validation)
+- `README.md`
+- `requirements.txt`
+- `.gitignore`
 
-## Current status
-
-This repository includes a FastAPI backend backed by SQLite, plus a comprehensive starter seed dataset across stories, characters, locations, and artworks.
-
-## Run backend locally
-
-### 1) Install dependencies
+## Backend Setup
 
 ```bash
 python -m venv .venv
@@ -32,76 +29,58 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2) Reseed local database (recommended)
-
-```bash
-python scripts/reseed_db.py
-```
-
-### 3) Start the API
-
-From the repository root:
+Start API:
 
 ```bash
 uvicorn backend.main:app --reload
 ```
 
-The API will be available at:
-- `http://127.0.0.1:8000`
-- interactive docs at `http://127.0.0.1:8000/docs`
+API base URL: `http://127.0.0.1:8000`
 
-## Data model highlights
+### Backend endpoints
 
-- `stories` now include `scripture_reference` and `summary`.
-- `locations` include `region`.
-- `artworks` include `medium`, `current_location`, and `related_story_id`.
-- `related_story_id` provides a direct story pointer for artwork-centric API clients.
-
-## API endpoints
-
-All endpoints return JSON.
-
-### Stories
+- `GET /health`
 - `GET /stories`
-  - Optional filters: `testament`, `character_id`, `location_id`, `artwork_id`
 - `GET /stories/{id}`
-
-### Characters
 - `GET /characters`
-  - Optional filters: `story_id`, `name`
 - `GET /characters/{id}`
-
-### Locations
 - `GET /locations`
-  - Optional filters: `story_id`, `name`
 - `GET /locations/{id}`
-
-### Artworks
 - `GET /artworks`
-  - Optional filters: `story_id`, `artist`, `related_story_id`
 - `GET /artworks/{id}`
 
-Each resource includes a `relationships` object so clients can navigate connected entities.
-For artworks, `relationships.related_story` is also returned when `related_story_id` is set.
+All endpoints return JSON and support filtering where appropriate.
+Detailed endpoints include a `relationships` object.
 
-## Basic validation
+## Database + Seeding
 
-After reseeding, you can run a quick sanity check:
+### Seed only if DB file does not exist
 
 ```bash
-python - <<'PY'
-from backend.db import get_connection
-
-with get_connection() as conn:
-    for table in ("stories", "characters", "locations", "artworks"):
-        count = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-        print(table, count)
-PY
+python scripts/seed_db.py
 ```
 
-## Run frontend locally
+### Full reseed (recommended during development)
 
-From a separate terminal:
+```bash
+python scripts/reseed_db.py
+```
+
+### Validation checks
+
+```bash
+python scripts/validate_data.py
+```
+
+Validation verifies:
+
+- 20 Old Testament stories
+- 20 New Testament stories
+- required characters present (Abraham, Moses, David, Solomon, Mary, Jesus, Peter, Paul)
+- required locations present (Jerusalem, Bethlehem, Nazareth, Mount Sinai, Babylon, Galilee)
+- artworks linked through `story_artworks`
+
+## Frontend Setup
 
 ```bash
 cd frontend
@@ -109,10 +88,27 @@ npm install
 npm run dev
 ```
 
-Frontend will run at `http://127.0.0.1:5173` and call the backend at `http://127.0.0.1:8000` by default.
+Frontend URL: `http://127.0.0.1:5173`
 
-To override API URL:
+### API configuration
+
+Frontend reads API base URL from:
+
+```bash
+VITE_API_BASE_URL
+```
+
+Example:
 
 ```bash
 VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev
 ```
+
+## Notes
+
+- CORS is enabled for local development.
+- SQLite schema includes relationship tables:
+  - `story_characters`
+  - `story_locations`
+  - `story_artworks`
+- `artworks.related_story_id` is included for direct relation lookups.
