@@ -55,17 +55,23 @@ API base URL: `http://127.0.0.1:8000`
 
 ### CORS configuration
 
-Backend CORS origins are controlled by `CORS_ALLOW_ORIGINS` (comma-separated).
-Default value is local frontend origins:
+Backend CORS is configurable using environment variables:
+
+- `CORS_ALLOW_ORIGINS` (comma-separated exact origins, default: `http://127.0.0.1:5173,http://localhost:5173`)
+- `CORS_ALLOW_ORIGIN_REGEX` (regex for dynamic origins, default: disabled)
+- `CORS_DEV_MODE` (`true/1/yes/on`) to allow all origins in development-friendly mode
+
+Examples:
 
 ```bash
-http://127.0.0.1:5173,http://localhost:5173
-```
-
-Example:
-
-```bash
+# Exact origins
 CORS_ALLOW_ORIGINS=http://localhost:5173,http://my-frontend.example uvicorn backend.main:app --reload
+
+# Dynamic origin matching (useful for port-forwarded/dev cloud URLs)
+CORS_ALLOW_ORIGIN_REGEX='https://.*\.app\.github\.dev' uvicorn backend.main:app --reload
+
+# Development-friendly mode (allow all origins; credentials disabled)
+CORS_DEV_MODE=true uvicorn backend.main:app --reload
 ```
 
 ### Backend endpoints
@@ -149,3 +155,36 @@ and a global error boundary to reduce blank-screen failures.
   - `story_locations`
   - `story_artworks`
 - `artworks.related_story_id` is included for direct relation lookups.
+
+
+## GitHub Codespaces usage
+
+When frontend and backend are exposed on different forwarded URLs, configure both API base URL and CORS:
+
+1. Start backend in one terminal:
+
+```bash
+CORS_ALLOW_ORIGIN_REGEX='https://.*\.app\.github\.dev' uvicorn backend.main:app --host 0.0.0.0 --port 8000
+```
+
+Alternative (most permissive for development only):
+
+```bash
+CORS_DEV_MODE=true uvicorn backend.main:app --host 0.0.0.0 --port 8000
+```
+
+2. Start frontend in another terminal:
+
+```bash
+cd frontend
+npm install
+VITE_API_BASE_URL=<YOUR_BACKEND_CODESPACES_URL> npm run dev -- --host 0.0.0.0 --port 5173
+```
+
+Example backend URL shape:
+
+```text
+https://<codespace-name>-8000.app.github.dev
+```
+
+This setup avoids browser CORS-related `Failed to fetch` errors when ports use different origins.
