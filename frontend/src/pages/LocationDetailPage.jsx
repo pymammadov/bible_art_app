@@ -31,6 +31,12 @@ export default function LocationDetailPage() {
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <h1 className="text-2xl font-bold">{location.name}</h1>
         <p className="mt-1 text-sm text-slate-600">{location.region}</p>
+        <p className="mt-1 text-sm text-slate-600">certainty: {location.certainty_level || 'unknown'}</p>
+        {location.latitude !== null && location.longitude !== null && (
+          <p className="mt-1 text-sm text-slate-600">
+            lat: {location.latitude}, lng: {location.longitude}
+          </p>
+        )}
         <p className="mt-3 text-slate-700">{location.description}</p>
       </section>
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">

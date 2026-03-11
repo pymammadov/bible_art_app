@@ -30,7 +30,10 @@ CREATE TABLE locations (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     region TEXT,
-    description TEXT
+    description TEXT,
+    latitude REAL,
+    longitude REAL,
+    certainty_level TEXT CHECK(certainty_level IN ('high', 'probable', 'traditional'))
 );
 
 CREATE TABLE institutions (
@@ -167,32 +170,32 @@ INSERT INTO characters (id, name, testament, description) VALUES
 (29, 'Paul', 'New Testament', 'Apostle to the Gentiles.'),
 (30, 'Cornelius', 'New Testament', 'Roman centurion in Acts 10.');
 
-INSERT INTO locations (id, name, region, description) VALUES
-(1, 'Eden', 'Mesopotamia (traditional)', 'Garden of humanity''s beginnings.'),
-(2, 'Ararat', 'Armenian Highlands (traditional)', 'Mountains associated with Noah''s ark.'),
-(3, 'Babel', 'Mesopotamia', 'City associated with the tower narrative.'),
-(4, 'Canaan', 'Levant', 'Land promised to Abraham''s descendants.'),
-(5, 'Moriah', 'Jerusalem region (traditional)', 'Mountain linked with Abraham and Isaac.'),
-(6, 'Bethel', 'Central highlands', 'Site of Jacob''s dream.'),
-(7, 'Egypt', 'North Africa', 'Land of Joseph''s service and Israel''s bondage.'),
-(8, 'Mount Sinai', 'Sinai Peninsula (traditional)', 'Mountain of covenant revelation.'),
-(9, 'Jericho', 'Jordan Valley', 'Fortified city in Joshua narratives.'),
-(10, 'Bethlehem', 'Judea', 'Town of Ruth and the birth of Jesus.'),
-(11, 'Valley of Elah', 'Judah', 'Battle site of David and Goliath.'),
-(12, 'Jerusalem', 'Judea', 'Political and spiritual center in biblical narratives.'),
-(13, 'Mount Carmel', 'Northern Israel', 'Site of Elijah''s contest.'),
-(14, 'Nineveh', 'Assyria', 'City in Jonah narrative.'),
-(15, 'Babylon', 'Mesopotamia', 'Imperial city of exile narratives.'),
-(16, 'Nazareth', 'Galilee', 'Home town associated with Mary and Jesus.'' upbringing.'),
-(17, 'Galilee', 'Northern Israel', 'Region of Jesus'' ministry.'),
-(18, 'Jordan River', 'Jordan Valley', 'River associated with baptism narratives.'),
-(19, 'Wilderness of Judea', 'Judea', 'Desert region associated with testing.'),
-(20, 'Sea of Galilee', 'Galilee', 'Lake setting for many Gospel scenes.'),
-(21, 'Bethany', 'Near Jerusalem', 'Village associated with Lazarus and his sisters.'),
-(22, 'Golgotha', 'Jerusalem', 'Traditional site of crucifixion.'),
-(23, 'Emmaus', 'Judea', 'Village on resurrection journey narrative.'),
-(24, 'Damascus', 'Syria', 'City tied to Paul''s conversion.'),
-(25, 'Athens', 'Achaia', 'City of Paul''s Areopagus speech.');
+INSERT INTO locations (id, name, region, description, latitude, longitude, certainty_level) VALUES
+(1, 'Eden', 'Mesopotamia (traditional)', 'Garden of humanity''s beginnings.', NULL, NULL, 'traditional'),
+(2, 'Ararat', 'Armenian Highlands (traditional)', 'Mountains associated with Noah''s ark.', NULL, NULL, 'traditional'),
+(3, 'Babel', 'Mesopotamia', 'City associated with the tower narrative.', NULL, NULL, 'traditional'),
+(4, 'Canaan', 'Levant', 'Land promised to Abraham''s descendants.', NULL, NULL, 'probable'),
+(5, 'Moriah', 'Jerusalem region (traditional)', 'Mountain linked with Abraham and Isaac.', NULL, NULL, 'traditional'),
+(6, 'Bethel', 'Central highlands', 'Site of Jacob''s dream.', 31.9300, 35.2200, 'probable'),
+(7, 'Egypt', 'North Africa', 'Land of Joseph''s service and Israel''s bondage.', 30.0444, 31.2357, 'probable'),
+(8, 'Mount Sinai', 'Sinai Peninsula (traditional)', 'Mountain of covenant revelation.', NULL, NULL, 'traditional'),
+(9, 'Jericho', 'Jordan Valley', 'Fortified city in Joshua narratives.', 31.8667, 35.4500, 'high'),
+(10, 'Bethlehem', 'Judea', 'Town of Ruth and the birth of Jesus.', 31.7054, 35.2024, 'high'),
+(11, 'Valley of Elah', 'Judah', 'Battle site of David and Goliath.', 31.7000, 34.9500, 'probable'),
+(12, 'Jerusalem', 'Judea', 'Political and spiritual center in biblical narratives.', 31.7767, 35.2345, 'high'),
+(13, 'Mount Carmel', 'Northern Israel', 'Site of Elijah''s contest.', 32.6600, 35.0400, 'probable'),
+(14, 'Nineveh', 'Assyria', 'City in Jonah narrative.', 36.3600, 43.1500, 'probable'),
+(15, 'Babylon', 'Mesopotamia', 'Imperial city of exile narratives.', 32.5400, 44.4200, 'probable'),
+(16, 'Nazareth', 'Galilee', 'Home town associated with Mary and Jesus.'' upbringing.', 32.7000, 35.3030, 'high'),
+(17, 'Galilee', 'Northern Israel', 'Region of Jesus'' ministry.', 32.8000, 35.5000, 'probable'),
+(18, 'Jordan River', 'Jordan Valley', 'River associated with baptism narratives.', 31.8200, 35.5500, 'probable'),
+(19, 'Wilderness of Judea', 'Judea', 'Desert region associated with testing.', 31.6500, 35.3500, 'probable'),
+(20, 'Sea of Galilee', 'Galilee', 'Lake setting for many Gospel scenes.', 32.8333, 35.5833, 'high'),
+(21, 'Bethany', 'Near Jerusalem', 'Village associated with Lazarus and his sisters.', 31.7700, 35.2650, 'probable'),
+(22, 'Golgotha', 'Jerusalem', 'Traditional site of crucifixion.', NULL, NULL, 'traditional'),
+(23, 'Emmaus', 'Judea', 'Village on resurrection journey narrative.', NULL, NULL, 'traditional'),
+(24, 'Damascus', 'Syria', 'City tied to Paul''s conversion.', 33.5138, 36.2765, 'high'),
+(25, 'Athens', 'Achaia', 'City of Paul''s Areopagus speech.', 37.9838, 23.7275, 'high');
 
 INSERT INTO institutions (id, name, city, country, website_url) VALUES
 (1, 'National Gallery, London', 'London', 'United Kingdom', 'https://www.nationalgallery.org.uk'),

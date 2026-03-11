@@ -76,7 +76,7 @@ def _story_relationships(story_id: int) -> dict[str, list[dict[str, Any]]]:
         ).fetchall()
         locations = conn.execute(
             """
-            SELECT l.id, l.name, l.region, l.description
+            SELECT l.id, l.name, l.region, l.description, l.latitude, l.longitude, l.certainty_level
             FROM locations l
             JOIN story_locations sl ON sl.location_id = l.id
             WHERE sl.story_id = ?
@@ -275,7 +275,11 @@ def get_character(character_id: int) -> dict[str, Any]:
 
 
 @router.get("/locations")
-def list_locations(story_id: int | None = Query(default=None), name: str | None = Query(default=None)) -> dict[str, Any]:
+def list_locations(
+    story_id: int | None = Query(default=None),
+    name: str | None = Query(default=None),
+    has_coordinates: bool | None = Query(default=None),
+) -> dict[str, Any]:
     conditions: list[str] = []
     params: list[Any] = []
 
@@ -285,11 +289,15 @@ def list_locations(story_id: int | None = Query(default=None), name: str | None 
     if name:
         conditions.append("l.name LIKE ?")
         params.append(f"%{name}%")
+    if has_coordinates is True:
+        conditions.append("l.latitude IS NOT NULL AND l.longitude IS NOT NULL")
+    if has_coordinates is False:
+        conditions.append("(l.latitude IS NULL OR l.longitude IS NULL)")
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     locations = _fetch_all(
         f"""
-        SELECT l.id, l.name, l.region, l.description
+        SELECT l.id, l.name, l.region, l.description, l.latitude, l.longitude, l.certainty_level
         FROM locations l
         {where_clause}
         ORDER BY l.name
@@ -307,7 +315,7 @@ def list_locations(story_id: int | None = Query(default=None), name: str | None 
 def get_location(location_id: int) -> dict[str, Any]:
     location = _fetch_one(
         """
-        SELECT id, name, region, description
+        SELECT id, name, region, description, latitude, longitude, certainty_level
         FROM locations
         WHERE id = ?
         """,

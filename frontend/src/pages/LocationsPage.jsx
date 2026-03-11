@@ -39,6 +39,7 @@ export default function LocationsPage() {
               </Link>
             </h2>
             <p className="mt-1 text-sm text-slate-600">{location.region}</p>
+            <p className="mt-1 text-sm text-slate-600">certainty: {location.certainty_level || 'unknown'}</p>
             <p className="mt-3 text-sm text-slate-700">{location.description}</p>
           </li>
         ))}

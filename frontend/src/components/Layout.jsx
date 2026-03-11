@@ -4,6 +4,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Stories', end: true },
   { to: '/characters', label: 'Characters' },
   { to: '/locations', label: 'Locations' },
+  { to: '/locations-map', label: 'Map-ready' },
   { to: '/artworks', label: 'Artworks' },
 ];
 

@@ -82,6 +82,7 @@ CORS_DEV_MODE=true uvicorn backend.main:app --reload
 - `GET /characters`
 - `GET /characters/{id}`
 - `GET /locations`
+  - Optional filters: `story_id`, `name`, `has_coordinates`
 - `GET /locations/{id}`
 - `GET /artworks`
 - `GET /artworks/{id}`
@@ -182,6 +183,30 @@ To evolve further without moving to a graph database:
 4. Add API filters for edge traversal (e.g. by `relation_type`, `direction`).
 5. Add dedicated `/graph/neighbors` endpoint for lightweight traversal use-cases.
 
+
+## Map-ready location data
+
+Locations now include optional geospatial fields:
+
+- `latitude` (nullable)
+- `longitude` (nullable)
+- `certainty_level` (`high`, `probable`, `traditional`)
+
+This avoids false precision: uncertain/traditional locations can keep coordinates as `NULL` while still carrying a certainty label.
+
+For API consumers:
+
+- use `GET /locations?has_coordinates=true` for map pins
+- use `GET /locations?has_coordinates=false` for locations that should remain list-only
+- detail responses include coordinates and certainty fields
+
+Future map component guidance:
+
+1. Fetch coordinate-ready points via `/locations?has_coordinates=true`.
+2. Render each point with a tooltip containing `name`, `region`, and `certainty_level`.
+3. Keep a side list for `/locations?has_coordinates=false` so uncertain places are still discoverable.
+4. Use `certainty_level` to vary marker style (e.g. solid/high vs dashed/traditional).
+
 ## Frontend Setup
 
 ```bash
@@ -221,6 +246,7 @@ and a global error boundary to reduce blank-screen failures.
 - `/characters/:characterId` character detail
 - `/locations` locations list
 - `/locations/:locationId` location detail
+- `/locations-map` map-ready locations view
 - `/artworks` artworks list
 - `/artworks/:artworkId` artwork detail
 
