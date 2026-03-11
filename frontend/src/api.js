@@ -84,4 +84,28 @@ export function getStoryById(storyId) {
   return request(`/stories/${storyId}`);
 }
 
+export function getCharacters(params = {}) {
+  return request(`/characters${toQueryString(params)}`);
+}
+
+export function getCharacterById(characterId) {
+  return request(`/characters/${characterId}`);
+}
+
+export function getLocations(params = {}) {
+  return request(`/locations${toQueryString(params)}`);
+}
+
+export function getLocationById(locationId) {
+  return request(`/locations/${locationId}`);
+}
+
+export function getArtworks(params = {}) {
+  return request(`/artworks${toQueryString(params)}`);
+}
+
+export function getArtworkById(artworkId) {
+  return request(`/artworks/${artworkId}`);
+}
+
 export { API_BASE_URL, ApiError };

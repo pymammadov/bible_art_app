@@ -147,6 +147,18 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 The frontend now includes request timeout handling, more descriptive API error messages,
 and a global error boundary to reduce blank-screen failures.
 
+
+### Frontend routes
+
+- `/` stories list
+- `/stories/:storyId` story detail
+- `/characters` characters list
+- `/characters/:characterId` character detail
+- `/locations` locations list
+- `/locations/:locationId` location detail
+- `/artworks` artworks list
+- `/artworks/:artworkId` artwork detail
+
 ## Notes
 
 - CORS is enabled for local development.
