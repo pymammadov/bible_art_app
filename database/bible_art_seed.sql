@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS story_artworks;
 DROP TABLE IF EXISTS story_locations;
 DROP TABLE IF EXISTS story_characters;
 DROP TABLE IF EXISTS artworks;
+DROP TABLE IF EXISTS institutions;
 DROP TABLE IF EXISTS locations;
 DROP TABLE IF EXISTS characters;
 DROP TABLE IF EXISTS stories;
@@ -31,6 +32,14 @@ CREATE TABLE locations (
     description TEXT
 );
 
+CREATE TABLE institutions (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    city TEXT,
+    country TEXT,
+    website_url TEXT
+);
+
 CREATE TABLE artworks (
     id INTEGER PRIMARY KEY,
     title TEXT NOT NULL,
@@ -40,7 +49,12 @@ CREATE TABLE artworks (
     current_location TEXT,
     description TEXT,
     related_story_id INTEGER,
-    FOREIGN KEY (related_story_id) REFERENCES stories(id)
+    institution_id INTEGER,
+    image_url TEXT,
+    source_url TEXT,
+    attribution TEXT,
+    FOREIGN KEY (related_story_id) REFERENCES stories(id),
+    FOREIGN KEY (institution_id) REFERENCES institutions(id)
 );
 
 CREATE TABLE story_characters (
@@ -167,6 +181,13 @@ INSERT INTO locations (id, name, region, description) VALUES
 (23, 'Emmaus', 'Judea', 'Village on resurrection journey narrative.'),
 (24, 'Damascus', 'Syria', 'City tied to Paul''s conversion.'),
 (25, 'Athens', 'Achaia', 'City of Paul''s Areopagus speech.');
+
+INSERT INTO institutions (id, name, city, country, website_url) VALUES
+(1, 'National Gallery, London', 'London', 'United Kingdom', 'https://www.nationalgallery.org.uk'),
+(2, 'Uffizi Gallery', 'Florence', 'Italy', 'https://www.uffizi.it'),
+(3, 'Museo del Prado', 'Madrid', 'Spain', 'https://www.museodelprado.es'),
+(4, 'Louvre Museum', 'Paris', 'France', 'https://www.louvre.fr'),
+(5, 'Rijksmuseum', 'Amsterdam', 'Netherlands', 'https://www.rijksmuseum.nl');
 
 INSERT INTO artworks (id, title, artist, year, medium, current_location, description, related_story_id) VALUES
 (1, 'The Creation of Adam', 'Michelangelo', 1512, 'Fresco', 'Sistine Chapel, Vatican City', 'Iconic Renaissance panel from the ceiling cycle.', 1),
@@ -299,3 +320,41 @@ INSERT INTO story_artworks (story_id, artwork_id) VALUES
 (11,11),(12,12),(13,13),(14,14),(15,15),(16,16),(17,17),(18,18),(19,19),(20,20),
 (21,21),(22,22),(23,23),(24,24),(25,25),(26,26),(27,27),(28,28),(29,29),(30,30),
 (31,31),(32,32),(33,33),(34,34),(35,35),(36,36),(37,37),(38,38),(39,39),(40,40);
+
+
+UPDATE artworks
+SET institution_id = CASE id
+    WHEN 1 THEN 1
+    WHEN 2 THEN 4
+    WHEN 3 THEN 1
+    WHEN 4 THEN 5
+    WHEN 6 THEN 2
+    WHEN 11 THEN 3
+    WHEN 20 THEN 1
+    WHEN 22 THEN 1
+    WHEN 24 THEN 2
+    WHEN 32 THEN 1
+    WHEN 33 THEN 3
+    WHEN 37 THEN 4
+    WHEN 39 THEN 5
+    ELSE institution_id
+END;
+
+UPDATE artworks
+SET source_url = CASE id
+    WHEN 1 THEN 'https://en.wikipedia.org/wiki/The_Creation_of_Adam'
+    WHEN 24 THEN 'https://en.wikipedia.org/wiki/The_Baptism_of_Christ_(Verrocchio_and_Leonardo)'
+    WHEN 32 THEN 'https://en.wikipedia.org/wiki/The_Last_Supper_(Leonardo)'
+    WHEN 38 THEN 'https://en.wikipedia.org/wiki/The_Conversion_of_Saint_Paul_(Caravaggio)'
+    ELSE source_url
+END,
+image_url = CASE id
+    WHEN 1 THEN 'https://upload.wikimedia.org/wikipedia/commons/5/5b/Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg'
+    WHEN 24 THEN 'https://upload.wikimedia.org/wikipedia/commons/9/95/Verrocchio%2C_Leonardo_da_Vinci_-_Baptism_of_Christ.jpg'
+    ELSE image_url
+END,
+attribution = CASE id
+    WHEN 1 THEN 'Public domain image via Wikimedia Commons.'
+    WHEN 24 THEN 'Public domain image via Wikimedia Commons.'
+    ELSE attribution
+END;

@@ -16,7 +16,7 @@ Bible Art App is a full-stack MVP for exploring links between biblical stories, 
 - `backend/` FastAPI application and API routes
 - `database/` SQLite file + seed SQL
 - `frontend/` React client
-- `scripts/` operational scripts (seed/reseed/validation)
+- `scripts/` operational scripts (seed/reseed/validation/ingestion stub)
 - `README.md`
 - `requirements.txt`
 - `.gitignore`
@@ -85,6 +85,8 @@ CORS_DEV_MODE=true uvicorn backend.main:app --reload
 - `GET /locations/{id}`
 - `GET /artworks`
 - `GET /artworks/{id}`
+- `GET /institutions`
+- `GET /institutions/{id}`
 
 All endpoints return JSON and support filtering where appropriate.
 Detailed endpoints include a `relationships` object.
@@ -116,6 +118,40 @@ Validation verifies:
 - required characters present (Abraham, Moses, David, Solomon, Mary, Jesus, Peter, Paul)
 - required locations present (Jerusalem, Bethlehem, Nazareth, Mount Sinai, Babylon, Galilee)
 - artworks linked through `story_artworks`
+
+
+## Artwork ingestion-ready layer
+
+The schema now supports future external museum imports with incremental additions:
+
+- `institutions` table (`name`, `city`, `country`, `website_url`)
+- `artworks.institution_id` (nullable foreign key)
+- `artworks.image_url`
+- `artworks.source_url`
+- `artworks.attribution`
+
+Current API responses for artworks include these new fields, and `/institutions` endpoints are available for lookup.
+
+### Ingestion stub (future external providers)
+
+A provider-agnostic ingestion scaffold is included:
+
+- `backend/ingestion.py` defines `ExternalArtworkRecord` and normalization mapping
+- `scripts/import_artworks_stub.py` demonstrates JSONL-based import + institution upsert
+
+Example usage:
+
+```bash
+python scripts/import_artworks_stub.py path/to/external_artworks.jsonl
+```
+
+Expected JSONL keys (normalized):
+- `title` (required)
+- optional: `artist`, `year`, `medium`, `description`
+- optional institution fields: `institution_name`, `institution_city`, `institution_country`, `institution_website_url`
+- optional attribution/media fields: `image_url`, `source_url`, `attribution`
+
+This keeps the existing artworks model compatible while enabling phased ingestion work.
 
 ## Frontend Setup
 

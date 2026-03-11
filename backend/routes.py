@@ -46,7 +46,8 @@ def _story_relationships(story_id: int) -> dict[str, list[dict[str, Any]]]:
         artworks = conn.execute(
             """
             SELECT a.id, a.title, a.artist, a.year, a.medium, a.current_location,
-                   a.description, a.related_story_id
+                   a.description, a.related_story_id, a.institution_id, a.image_url,
+                   a.source_url, a.attribution
             FROM artworks a
             JOIN story_artworks sa ON sa.artwork_id = a.id
             WHERE sa.story_id = ?
@@ -112,10 +113,20 @@ def _artwork_relationships(artwork_id: int) -> dict[str, Any]:
             """,
             (artwork_id,),
         ).fetchone()
+        institution = conn.execute(
+            """
+            SELECT i.id, i.name, i.city, i.country, i.website_url
+            FROM institutions i
+            JOIN artworks a ON a.institution_id = i.id
+            WHERE a.id = ?
+            """,
+            (artwork_id,),
+        ).fetchone()
 
     return {
         "stories": [dict(row) for row in stories],
         "related_story": dict(related_story) if related_story else None,
+        "institution": dict(institution) if institution else None,
     }
 
 
@@ -291,7 +302,8 @@ def list_artworks(
     artworks = _fetch_all(
         f"""
         SELECT a.id, a.title, a.artist, a.year, a.medium, a.current_location,
-               a.description, a.related_story_id
+               a.description, a.related_story_id, a.institution_id, a.image_url,
+               a.source_url, a.attribution
         FROM artworks a
         {where_clause}
         ORDER BY a.title
@@ -309,7 +321,8 @@ def list_artworks(
 def get_artwork(artwork_id: int) -> dict[str, Any]:
     artwork = _fetch_one(
         """
-        SELECT id, title, artist, year, medium, current_location, description, related_story_id
+        SELECT id, title, artist, year, medium, current_location, description, related_story_id,
+               institution_id, image_url, source_url, attribution
         FROM artworks
         WHERE id = ?
         """,
@@ -320,3 +333,52 @@ def get_artwork(artwork_id: int) -> dict[str, Any]:
 
     artwork["relationships"] = _artwork_relationships(artwork_id)
     return artwork
+
+
+@router.get("/institutions")
+def list_institutions(name: str | None = Query(default=None)) -> dict[str, Any]:
+    conditions: list[str] = []
+    params: list[Any] = []
+
+    if name:
+        conditions.append("i.name LIKE ?")
+        params.append(f"%{name}%")
+
+    where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    institutions = _fetch_all(
+        f"""
+        SELECT i.id, i.name, i.city, i.country, i.website_url
+        FROM institutions i
+        {where_clause}
+        ORDER BY i.name
+        """,
+        tuple(params),
+    )
+    return {"items": institutions, "count": len(institutions)}
+
+
+@router.get("/institutions/{institution_id}")
+def get_institution(institution_id: int) -> dict[str, Any]:
+    institution = _fetch_one(
+        """
+        SELECT id, name, city, country, website_url
+        FROM institutions
+        WHERE id = ?
+        """,
+        (institution_id,),
+    )
+    if not institution:
+        raise HTTPException(status_code=404, detail="Institution not found")
+
+    artworks = _fetch_all(
+        """
+        SELECT id, title, artist, year, medium, current_location, description, related_story_id,
+               institution_id, image_url, source_url, attribution
+        FROM artworks
+        WHERE institution_id = ?
+        ORDER BY title
+        """,
+        (institution_id,),
+    )
+    institution["relationships"] = {"artworks": artworks}
+    return institution
