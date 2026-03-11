@@ -8,8 +8,19 @@ async function request(path) {
   return response.json();
 }
 
-export function getStories() {
-  return request('/stories');
+function toQueryString(params = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      query.set(key, String(value));
+    }
+  });
+  const encoded = query.toString();
+  return encoded ? `?${encoded}` : '';
+}
+
+export function getStories(params = {}) {
+  return request(`/stories${toQueryString(params)}`);
 }
 
 export function getStoryById(storyId) {
