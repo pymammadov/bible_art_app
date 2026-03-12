@@ -25,6 +25,18 @@ Bible Art App is a full-stack MVP for exploring links between biblical stories, 
 
 This repository includes a minimal FastAPI backend and a reseedable SQLite dataset for stories, characters, locations, and artworks.
 
+
+## Development startup script
+
+From the repository root, run:
+
+```bash
+bash scripts/dev.sh
+```
+
+This installs backend/frontend dependencies, starts FastAPI on port `8000`, and starts Vite on port `5173`.
+
+
 ## Run backend locally
 
 ### 1) Install dependencies
