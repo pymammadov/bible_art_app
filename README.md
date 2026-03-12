@@ -1,24 +1,27 @@
 # Bible Art App
 
-A database-first project for mapping:
+Bible Art App is a full-stack MVP for exploring links between biblical stories, characters, locations, and artworks.
 
-- Old Testament stories
-- New Testament stories
-- biblical characters
-- probable historical/traditional locations
-- artworks inspired by biblical narratives
+## Stack
 
-## Project goal
+- Python 3.11+
+- FastAPI
+- SQLite
+- React + Vite
+- React Router
+- Tailwind CSS
 
-This project aims to become a searchable discovery app that connects:
+## Project Structure
 
-- stories
-- characters
-- locations
-- artworks
-- institutions and galleries
+- `backend/` FastAPI application and API routes
+- `database/` SQLite file + seed SQL
+- `frontend/` React client
+- `scripts/` operational scripts (seed/reseed/validation/ingestion stub)
+- `README.md`
+- `requirements.txt`
+- `.gitignore`
 
-## Current status
+## One-command local run (recommended)
 
 This repository includes a minimal FastAPI backend and a reseedable SQLite dataset for stories, characters, locations, and artworks.
 
