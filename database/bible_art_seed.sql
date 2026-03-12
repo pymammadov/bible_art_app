@@ -1,11 +1,7 @@
-PRAGMA foreign_keys = ON;
-
-DROP TABLE IF EXISTS entity_links;
 DROP TABLE IF EXISTS story_artworks;
 DROP TABLE IF EXISTS story_locations;
 DROP TABLE IF EXISTS story_characters;
 DROP TABLE IF EXISTS artworks;
-DROP TABLE IF EXISTS institutions;
 DROP TABLE IF EXISTS locations;
 DROP TABLE IF EXISTS characters;
 DROP TABLE IF EXISTS stories;
@@ -13,35 +9,20 @@ DROP TABLE IF EXISTS stories;
 CREATE TABLE stories (
     id INTEGER PRIMARY KEY,
     title TEXT NOT NULL,
-    testament TEXT NOT NULL CHECK(testament IN ('Old Testament', 'New Testament')),
-    scripture_reference TEXT,
-    summary TEXT,
-    description TEXT
+    testament TEXT NOT NULL,
+    summary TEXT NOT NULL
 );
 
 CREATE TABLE characters (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
-    testament TEXT,
     description TEXT
 );
 
 CREATE TABLE locations (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
-    region TEXT,
-    description TEXT,
-    latitude REAL,
-    longitude REAL,
-    certainty_level TEXT CHECK(certainty_level IN ('high', 'probable', 'traditional'))
-);
-
-CREATE TABLE institutions (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
-    city TEXT,
-    country TEXT,
-    website_url TEXT
+    description TEXT
 );
 
 CREATE TABLE artworks (
@@ -49,16 +30,10 @@ CREATE TABLE artworks (
     title TEXT NOT NULL,
     artist TEXT,
     year INTEGER,
-    medium TEXT,
-    current_location TEXT,
-    description TEXT,
+    museum TEXT,
     related_story_id INTEGER,
-    institution_id INTEGER,
-    image_url TEXT,
-    source_url TEXT,
-    attribution TEXT,
-    FOREIGN KEY (related_story_id) REFERENCES stories(id),
-    FOREIGN KEY (institution_id) REFERENCES institutions(id)
+    description TEXT,
+    FOREIGN KEY (related_story_id) REFERENCES stories(id)
 );
 
 CREATE TABLE story_characters (
