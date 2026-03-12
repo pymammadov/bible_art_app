@@ -53,6 +53,8 @@ uvicorn backend.main:app --reload
 
 API base URL: `http://127.0.0.1:8000`
 
+If you open the backend URL directly in a browser, you should now see a small JSON service message at `/` (instead of a 404). For API exploration use `/docs`; for the UI open the frontend URL (typically `http://127.0.0.1:5173`).
+
 ### CORS configuration
 
 Backend CORS is configurable using environment variables:

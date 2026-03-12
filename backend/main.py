@@ -53,6 +53,16 @@ app.add_middleware(
 def startup() -> None:
     initialize_db()
 
+@app.get("/")
+def root() -> dict[str, object]:
+    return {
+        "service": "Bible Art API",
+        "status": "ok",
+        "docs": "/docs",
+        "health": "/health",
+        "frontend_hint": "If you expected the web UI, open the frontend dev URL (usually :5173).",
+    }
+
 
 @app.get("/health")
 def health() -> dict[str, str]:
