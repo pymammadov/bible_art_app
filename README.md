@@ -25,6 +25,28 @@ Bible Art App is a full-stack MVP for exploring links between biblical stories, 
 
 This repository includes a minimal FastAPI backend and a reseedable SQLite dataset for stories, characters, locations, and artworks.
 
+
+## Development startup script
+
+From the repository root, run:
+
+```bash
+bash scripts/dev.sh
+```
+
+This installs backend/frontend dependencies, starts FastAPI on port `8000`, and starts Vite on port `5173`.
+
+Vite now proxies frontend API calls from `/api/*` to `http://127.0.0.1:8000`, so local/Codespaces dev does not require setting `VITE_API_BASE_URL` or debugging CORS for normal development.
+
+
+
+## Frontend API proxy (development)
+
+During local development (`npm run dev`), the frontend calls relative endpoints such as `/api/stories`.
+Vite forwards these to the backend on port `8000`.
+
+For deployed environments, you can still set `VITE_API_BASE_URL` to a full backend URL if needed.
+
 ## Run backend locally
 
 ### 1) Install dependencies

@@ -1,19 +1,5 @@
-function inferDefaultApiBaseUrl() {
-  if (typeof window === 'undefined' || !window.location) {
-    return 'http://127.0.0.1:8000';
-  }
-
-  const { protocol, hostname } = window.location;
-
-  if (hostname.endsWith('.app.github.dev')) {
-    const codespacesHost = hostname.replace(/-\d+\.app\.github\.dev$/, '-8000.app.github.dev');
-    return `${protocol}//${codespacesHost}`;
-  }
-
-  return 'http://127.0.0.1:8000';
-}
-
-const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || inferDefaultApiBaseUrl();
+const DEFAULT_API_BASE_URL = '/api';
+const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL;
 const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '');
 const REQUEST_TIMEOUT_MS = 10000;
 
@@ -84,9 +70,7 @@ async function request(path, options = {}) {
       throw error;
     }
 
-    throw new ApiError(
-      `Network error while calling ${API_BASE_URL}${path}. Verify backend is running, CORS is enabled, and VITE_API_BASE_URL is correct.`,
-    );
+    throw new ApiError(`Network error while calling ${API_BASE_URL}${path}. Verify backend is running and API URL is correct.`);
   } finally {
     clearTimeout(timeoutId);
   }
