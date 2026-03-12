@@ -2,22 +2,53 @@ name: Bible Art CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  validate-db:
+  backend-validation:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install SQLite
-        run: sudo apt-get update && sudo apt-get install -y sqlite3
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-      - name: Validate database schema
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validate SQL seed executes cleanly
         run: |
           sqlite3 test.db < database/bible_art_seed.sql
-          echo "Schema validated successfully"
+
+      - name: Reseed and validate dataset checks
+        run: |
+          python scripts/reseed_db.py
+          python scripts/validate_data.py
+
+  frontend-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build

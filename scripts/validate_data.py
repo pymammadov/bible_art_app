@@ -46,6 +46,25 @@ def main() -> None:
         if missing_links > 0:
             raise SystemExit(f"Found {missing_links} artworks without story_artworks link")
 
+        institutions_count = scalar(conn, "SELECT COUNT(*) FROM institutions")
+        if institutions_count < 1:
+            raise SystemExit("Expected at least one institution record")
+
+        nullable_metadata_count = scalar(
+            conn,
+            """
+            SELECT COUNT(*)
+            FROM artworks
+            WHERE image_url IS NOT NULL OR source_url IS NOT NULL OR attribution IS NOT NULL
+            """,
+        )
+        if nullable_metadata_count < 1:
+            raise SystemExit("Expected at least one artwork with ingestion metadata (image/source/attribution)")
+
+        entity_links_count = scalar(conn, "SELECT COUNT(*) FROM entity_links")
+        if entity_links_count < 1:
+            raise SystemExit("Expected at least one graph relationship record in entity_links")
+
     print("Validation checks passed.")
 
 

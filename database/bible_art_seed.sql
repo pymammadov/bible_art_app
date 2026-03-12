@@ -1,9 +1,11 @@
 PRAGMA foreign_keys = ON;
 
+DROP TABLE IF EXISTS entity_links;
 DROP TABLE IF EXISTS story_artworks;
 DROP TABLE IF EXISTS story_locations;
 DROP TABLE IF EXISTS story_characters;
 DROP TABLE IF EXISTS artworks;
+DROP TABLE IF EXISTS institutions;
 DROP TABLE IF EXISTS locations;
 DROP TABLE IF EXISTS characters;
 DROP TABLE IF EXISTS stories;
@@ -28,7 +30,18 @@ CREATE TABLE locations (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     region TEXT,
-    description TEXT
+    description TEXT,
+    latitude REAL,
+    longitude REAL,
+    certainty_level TEXT CHECK(certainty_level IN ('high', 'probable', 'traditional'))
+);
+
+CREATE TABLE institutions (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    city TEXT,
+    country TEXT,
+    website_url TEXT
 );
 
 CREATE TABLE artworks (
@@ -40,7 +53,12 @@ CREATE TABLE artworks (
     current_location TEXT,
     description TEXT,
     related_story_id INTEGER,
-    FOREIGN KEY (related_story_id) REFERENCES stories(id)
+    institution_id INTEGER,
+    image_url TEXT,
+    source_url TEXT,
+    attribution TEXT,
+    FOREIGN KEY (related_story_id) REFERENCES stories(id),
+    FOREIGN KEY (institution_id) REFERENCES institutions(id)
 );
 
 CREATE TABLE story_characters (
@@ -65,6 +83,17 @@ CREATE TABLE story_artworks (
     PRIMARY KEY (story_id, artwork_id),
     FOREIGN KEY (story_id) REFERENCES stories(id),
     FOREIGN KEY (artwork_id) REFERENCES artworks(id)
+);
+
+
+CREATE TABLE entity_links (
+    id INTEGER PRIMARY KEY,
+    source_type TEXT NOT NULL,
+    source_id INTEGER NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id INTEGER NOT NULL,
+    relation_type TEXT NOT NULL,
+    evidence TEXT
 );
 
 INSERT INTO stories (id, title, testament, scripture_reference, summary, description) VALUES
@@ -141,32 +170,39 @@ INSERT INTO characters (id, name, testament, description) VALUES
 (29, 'Paul', 'New Testament', 'Apostle to the Gentiles.'),
 (30, 'Cornelius', 'New Testament', 'Roman centurion in Acts 10.');
 
-INSERT INTO locations (id, name, region, description) VALUES
-(1, 'Eden', 'Mesopotamia (traditional)', 'Garden of humanity''s beginnings.'),
-(2, 'Ararat', 'Armenian Highlands (traditional)', 'Mountains associated with Noah''s ark.'),
-(3, 'Babel', 'Mesopotamia', 'City associated with the tower narrative.'),
-(4, 'Canaan', 'Levant', 'Land promised to Abraham''s descendants.'),
-(5, 'Moriah', 'Jerusalem region (traditional)', 'Mountain linked with Abraham and Isaac.'),
-(6, 'Bethel', 'Central highlands', 'Site of Jacob''s dream.'),
-(7, 'Egypt', 'North Africa', 'Land of Joseph''s service and Israel''s bondage.'),
-(8, 'Mount Sinai', 'Sinai Peninsula (traditional)', 'Mountain of covenant revelation.'),
-(9, 'Jericho', 'Jordan Valley', 'Fortified city in Joshua narratives.'),
-(10, 'Bethlehem', 'Judea', 'Town of Ruth and the birth of Jesus.'),
-(11, 'Valley of Elah', 'Judah', 'Battle site of David and Goliath.'),
-(12, 'Jerusalem', 'Judea', 'Political and spiritual center in biblical narratives.'),
-(13, 'Mount Carmel', 'Northern Israel', 'Site of Elijah''s contest.'),
-(14, 'Nineveh', 'Assyria', 'City in Jonah narrative.'),
-(15, 'Babylon', 'Mesopotamia', 'Imperial city of exile narratives.'),
-(16, 'Nazareth', 'Galilee', 'Home town associated with Mary and Jesus.'' upbringing.'),
-(17, 'Galilee', 'Northern Israel', 'Region of Jesus'' ministry.'),
-(18, 'Jordan River', 'Jordan Valley', 'River associated with baptism narratives.'),
-(19, 'Wilderness of Judea', 'Judea', 'Desert region associated with testing.'),
-(20, 'Sea of Galilee', 'Galilee', 'Lake setting for many Gospel scenes.'),
-(21, 'Bethany', 'Near Jerusalem', 'Village associated with Lazarus and his sisters.'),
-(22, 'Golgotha', 'Jerusalem', 'Traditional site of crucifixion.'),
-(23, 'Emmaus', 'Judea', 'Village on resurrection journey narrative.'),
-(24, 'Damascus', 'Syria', 'City tied to Paul''s conversion.'),
-(25, 'Athens', 'Achaia', 'City of Paul''s Areopagus speech.');
+INSERT INTO locations (id, name, region, description, latitude, longitude, certainty_level) VALUES
+(1, 'Eden', 'Mesopotamia (traditional)', 'Garden of humanity''s beginnings.', NULL, NULL, 'traditional'),
+(2, 'Ararat', 'Armenian Highlands (traditional)', 'Mountains associated with Noah''s ark.', NULL, NULL, 'traditional'),
+(3, 'Babel', 'Mesopotamia', 'City associated with the tower narrative.', NULL, NULL, 'traditional'),
+(4, 'Canaan', 'Levant', 'Land promised to Abraham''s descendants.', NULL, NULL, 'probable'),
+(5, 'Moriah', 'Jerusalem region (traditional)', 'Mountain linked with Abraham and Isaac.', NULL, NULL, 'traditional'),
+(6, 'Bethel', 'Central highlands', 'Site of Jacob''s dream.', 31.9300, 35.2200, 'probable'),
+(7, 'Egypt', 'North Africa', 'Land of Joseph''s service and Israel''s bondage.', 30.0444, 31.2357, 'probable'),
+(8, 'Mount Sinai', 'Sinai Peninsula (traditional)', 'Mountain of covenant revelation.', NULL, NULL, 'traditional'),
+(9, 'Jericho', 'Jordan Valley', 'Fortified city in Joshua narratives.', 31.8667, 35.4500, 'high'),
+(10, 'Bethlehem', 'Judea', 'Town of Ruth and the birth of Jesus.', 31.7054, 35.2024, 'high'),
+(11, 'Valley of Elah', 'Judah', 'Battle site of David and Goliath.', 31.7000, 34.9500, 'probable'),
+(12, 'Jerusalem', 'Judea', 'Political and spiritual center in biblical narratives.', 31.7767, 35.2345, 'high'),
+(13, 'Mount Carmel', 'Northern Israel', 'Site of Elijah''s contest.', 32.6600, 35.0400, 'probable'),
+(14, 'Nineveh', 'Assyria', 'City in Jonah narrative.', 36.3600, 43.1500, 'probable'),
+(15, 'Babylon', 'Mesopotamia', 'Imperial city of exile narratives.', 32.5400, 44.4200, 'probable'),
+(16, 'Nazareth', 'Galilee', 'Home town associated with Mary and Jesus.'' upbringing.', 32.7000, 35.3030, 'high'),
+(17, 'Galilee', 'Northern Israel', 'Region of Jesus'' ministry.', 32.8000, 35.5000, 'probable'),
+(18, 'Jordan River', 'Jordan Valley', 'River associated with baptism narratives.', 31.8200, 35.5500, 'probable'),
+(19, 'Wilderness of Judea', 'Judea', 'Desert region associated with testing.', 31.6500, 35.3500, 'probable'),
+(20, 'Sea of Galilee', 'Galilee', 'Lake setting for many Gospel scenes.', 32.8333, 35.5833, 'high'),
+(21, 'Bethany', 'Near Jerusalem', 'Village associated with Lazarus and his sisters.', 31.7700, 35.2650, 'probable'),
+(22, 'Golgotha', 'Jerusalem', 'Traditional site of crucifixion.', NULL, NULL, 'traditional'),
+(23, 'Emmaus', 'Judea', 'Village on resurrection journey narrative.', NULL, NULL, 'traditional'),
+(24, 'Damascus', 'Syria', 'City tied to Paul''s conversion.', 33.5138, 36.2765, 'high'),
+(25, 'Athens', 'Achaia', 'City of Paul''s Areopagus speech.', 37.9838, 23.7275, 'high');
+
+INSERT INTO institutions (id, name, city, country, website_url) VALUES
+(1, 'National Gallery, London', 'London', 'United Kingdom', 'https://www.nationalgallery.org.uk'),
+(2, 'Uffizi Gallery', 'Florence', 'Italy', 'https://www.uffizi.it'),
+(3, 'Museo del Prado', 'Madrid', 'Spain', 'https://www.museodelprado.es'),
+(4, 'Louvre Museum', 'Paris', 'France', 'https://www.louvre.fr'),
+(5, 'Rijksmuseum', 'Amsterdam', 'Netherlands', 'https://www.rijksmuseum.nl');
 
 INSERT INTO artworks (id, title, artist, year, medium, current_location, description, related_story_id) VALUES
 (1, 'The Creation of Adam', 'Michelangelo', 1512, 'Fresco', 'Sistine Chapel, Vatican City', 'Iconic Renaissance panel from the ceiling cycle.', 1),
@@ -299,3 +335,64 @@ INSERT INTO story_artworks (story_id, artwork_id) VALUES
 (11,11),(12,12),(13,13),(14,14),(15,15),(16,16),(17,17),(18,18),(19,19),(20,20),
 (21,21),(22,22),(23,23),(24,24),(25,25),(26,26),(27,27),(28,28),(29,29),(30,30),
 (31,31),(32,32),(33,33),(34,34),(35,35),(36,36),(37,37),(38,38),(39,39),(40,40);
+
+
+UPDATE artworks
+SET institution_id = CASE id
+    WHEN 1 THEN 1
+    WHEN 2 THEN 4
+    WHEN 3 THEN 1
+    WHEN 4 THEN 5
+    WHEN 6 THEN 2
+    WHEN 11 THEN 3
+    WHEN 20 THEN 1
+    WHEN 22 THEN 1
+    WHEN 24 THEN 2
+    WHEN 32 THEN 1
+    WHEN 33 THEN 3
+    WHEN 37 THEN 4
+    WHEN 39 THEN 5
+    ELSE institution_id
+END;
+
+UPDATE artworks
+SET source_url = CASE id
+    WHEN 1 THEN 'https://en.wikipedia.org/wiki/The_Creation_of_Adam'
+    WHEN 24 THEN 'https://en.wikipedia.org/wiki/The_Baptism_of_Christ_(Verrocchio_and_Leonardo)'
+    WHEN 32 THEN 'https://en.wikipedia.org/wiki/The_Last_Supper_(Leonardo)'
+    WHEN 38 THEN 'https://en.wikipedia.org/wiki/The_Conversion_of_Saint_Paul_(Caravaggio)'
+    ELSE source_url
+END,
+image_url = CASE id
+    WHEN 1 THEN 'https://upload.wikimedia.org/wikipedia/commons/5/5b/Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg'
+    WHEN 24 THEN 'https://upload.wikimedia.org/wikipedia/commons/9/95/Verrocchio%2C_Leonardo_da_Vinci_-_Baptism_of_Christ.jpg'
+    ELSE image_url
+END,
+attribution = CASE id
+    WHEN 1 THEN 'Public domain image via Wikimedia Commons.'
+    WHEN 24 THEN 'Public domain image via Wikimedia Commons.'
+    ELSE attribution
+END;
+
+
+INSERT INTO entity_links (source_type, source_id, target_type, target_id, relation_type, evidence)
+SELECT 'story', story_id, 'character', character_id, 'involves_character', 'seed:story_characters'
+FROM story_characters;
+
+INSERT INTO entity_links (source_type, source_id, target_type, target_id, relation_type, evidence)
+SELECT 'story', story_id, 'location', location_id, 'takes_place_in', 'seed:story_locations'
+FROM story_locations;
+
+INSERT INTO entity_links (source_type, source_id, target_type, target_id, relation_type, evidence)
+SELECT 'story', story_id, 'artwork', artwork_id, 'inspired_artwork', 'seed:story_artworks'
+FROM story_artworks;
+
+INSERT INTO entity_links (source_type, source_id, target_type, target_id, relation_type, evidence)
+SELECT 'artwork', id, 'story', related_story_id, 'depicts_primary_story', 'seed:artworks.related_story_id'
+FROM artworks
+WHERE related_story_id IS NOT NULL;
+
+INSERT INTO entity_links (source_type, source_id, target_type, target_id, relation_type, evidence)
+SELECT 'artwork', id, 'institution', institution_id, 'held_by_institution', 'seed:artworks.institution_id'
+FROM artworks
+WHERE institution_id IS NOT NULL;
