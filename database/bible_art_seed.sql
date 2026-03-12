@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS story_artworks;
 DROP TABLE IF EXISTS story_locations;
 DROP TABLE IF EXISTS story_characters;
 DROP TABLE IF EXISTS artworks;
+DROP TABLE IF EXISTS institutions;
 DROP TABLE IF EXISTS locations;
 DROP TABLE IF EXISTS characters;
 DROP TABLE IF EXISTS stories;
@@ -10,19 +11,34 @@ CREATE TABLE stories (
     id INTEGER PRIMARY KEY,
     title TEXT NOT NULL,
     testament TEXT NOT NULL,
-    summary TEXT NOT NULL
+    scripture_reference TEXT,
+    summary TEXT NOT NULL,
+    description TEXT
 );
 
 CREATE TABLE characters (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
+    testament TEXT,
     description TEXT
 );
 
 CREATE TABLE locations (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
-    description TEXT
+    region TEXT,
+    description TEXT,
+    latitude REAL,
+    longitude REAL,
+    certainty_level TEXT
+);
+
+CREATE TABLE institutions (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    city TEXT,
+    country TEXT,
+    website_url TEXT
 );
 
 CREATE TABLE artworks (
@@ -30,10 +46,17 @@ CREATE TABLE artworks (
     title TEXT NOT NULL,
     artist TEXT,
     year INTEGER,
+    medium TEXT,
     museum TEXT,
-    related_story_id INTEGER,
+    current_location TEXT,
     description TEXT,
-    FOREIGN KEY (related_story_id) REFERENCES stories(id)
+    related_story_id INTEGER,
+    institution_id INTEGER,
+    source_url TEXT,
+    image_url TEXT,
+    attribution TEXT,
+    FOREIGN KEY (related_story_id) REFERENCES stories(id),
+    FOREIGN KEY (institution_id) REFERENCES institutions(id)
 );
 
 CREATE TABLE story_characters (
@@ -349,6 +372,11 @@ attribution = CASE id
     ELSE attribution
 END;
 
+
+
+UPDATE artworks
+SET museum = COALESCE(museum, current_location)
+WHERE current_location IS NOT NULL;
 
 INSERT INTO entity_links (source_type, source_id, target_type, target_id, relation_type, evidence)
 SELECT 'story', story_id, 'character', character_id, 'involves_character', 'seed:story_characters'
