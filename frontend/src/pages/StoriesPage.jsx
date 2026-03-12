@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getStories } from '../api';
+import { API_BASE_URL, getStories } from '../api';
 
 const TESTAMENTS = ['All', 'Old Testament', 'New Testament'];
 
@@ -104,6 +104,7 @@ export default function StoriesPage() {
         <section className="rounded-md border border-red-200 bg-red-50 p-4 text-red-700">
           <p className="font-medium">Could not load stories.</p>
           <p className="mt-1 text-sm">{error}</p>
+          <p className="mt-1 text-xs">Current API base URL: <code>{API_BASE_URL}</code></p>
           <button
             type="button"
             onClick={loadStories}
