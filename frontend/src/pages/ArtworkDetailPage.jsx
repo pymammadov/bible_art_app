@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getArtworkById } from '../api';
+import { EmptyState, ErrorState } from '../components/AsyncViewStates';
 
 export default function ArtworkDetailPage() {
   const { artworkId } = useParams();
@@ -8,7 +9,13 @@ export default function ArtworkDetailPage() {
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const loadArtwork = useCallback(() => {
+    if (!artworkId) {
+      setStatus('error');
+      setError('Artwork id is missing.');
+      return;
+    }
+
     setStatus('loading');
     setError('');
     getArtworkById(artworkId)
@@ -18,47 +25,66 @@ export default function ArtworkDetailPage() {
       })
       .catch((err) => {
         setError(err.message || 'Unable to load artwork');
+        setArtwork(null);
         setStatus('error');
       });
   }, [artworkId]);
 
+  useEffect(() => {
+    loadArtwork();
+  }, [loadArtwork]);
+
   if (status === 'loading') return <p className="text-slate-600">Loading artwork...</p>;
-  if (status === 'error' || !artwork) return <p className="rounded-md bg-red-50 p-4 text-red-700">{error || 'Artwork not found'}</p>;
+
+  if (status === 'error' || !artwork) {
+    return (
+      <div className="space-y-4">
+        <Link to="/artworks" className="text-sm font-medium text-indigo-600 hover:underline">
+          ← Back to artworks
+        </Link>
+        <ErrorState title="Could not load this artwork." error={error || 'Artwork not found'} onRetry={loadArtwork} />
+      </div>
+    );
+  }
+
+  const relatedStories = artwork.relationships?.stories || [];
 
   return (
     <div className="space-y-6">
-      <Link to="/artworks" className="text-sm font-medium text-indigo-600 hover:underline">← Back to artworks</Link>
+      <Link to="/artworks" className="text-sm font-medium text-indigo-600 hover:underline">
+        ← Back to artworks
+      </Link>
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <h1 className="text-2xl font-bold">{artwork.title}</h1>
-        <p className="mt-1 text-sm text-slate-600">{artwork.artist} {artwork.year ? `(${artwork.year})` : ''}</p>
-        <p className="mt-1 text-sm text-slate-600">{artwork.medium}</p>
-        <p className="mt-1 text-sm text-slate-600">{artwork.current_location}</p>
-        <p className="mt-3 text-slate-700">{artwork.description}</p>
+        <p className="mt-1 text-sm text-slate-600">
+          {artwork.artist || 'Unknown artist'}
+          {artwork.year ? ` (${artwork.year})` : ''}
+        </p>
+        <p className="mt-1 text-sm text-slate-600">{artwork.museum || 'Museum unknown'}</p>
+        <p className="mt-3 text-slate-700">{artwork.description || 'No description provided.'}</p>
+        {artwork.related_story_id && (
+          <p className="mt-3 text-sm text-slate-600">
+            Primary related story ID: <span className="font-medium">{artwork.related_story_id}</span>
+          </p>
+        )}
       </section>
       <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-lg font-semibold">Related stories</h2>
-        {(artwork.relationships?.stories || []).length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">No related stories.</p>
+        {relatedStories.length === 0 ? (
+          <EmptyState message="No related stories for this artwork." />
         ) : (
           <ul className="mt-2 space-y-2">
-            {artwork.relationships.stories.map((story) => (
-              <li key={story.id} className="text-sm">
-                <Link className="text-indigo-600 hover:underline" to={`/stories/${story.id}`}>
+            {relatedStories.map((story) => (
+              <li key={story.id} className="rounded-md bg-slate-50 p-3 text-sm">
+                <Link className="font-medium text-indigo-600 hover:underline" to={`/stories/${story.id}`}>
                   {story.title}
                 </Link>
+                <p className="mt-1 text-slate-600">{story.summary}</p>
               </li>
             ))}
           </ul>
         )}
       </section>
-      {artwork.relationships?.related_story && (
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold">Primary related story</h2>
-          <Link className="mt-2 inline-block text-sm text-indigo-600 hover:underline" to={`/stories/${artwork.relationships.related_story.id}`}>
-            {artwork.relationships.related_story.title}
-          </Link>
-        </section>
-      )}
     </div>
   );
 }

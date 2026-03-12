@@ -82,3 +82,15 @@ All endpoints return JSON.
 Seeded artwork rows include `title`, `artist`, `year`, `museum`, and `related_story_id`.
 
 Each resource includes a `relationships` object so clients can navigate connected entities.
+
+## Frontend routes
+
+The React app includes browse + detail pages for each main entity:
+
+- `/` stories list
+- `/stories/:storyId` story detail with linked characters, locations, and artworks
+- `/characters` and `/characters/:characterId`
+- `/locations` and `/locations/:locationId`
+- `/artworks` and `/artworks/:artworkId`
+
+All pages use the FastAPI endpoints above and render loading, error, and empty states.

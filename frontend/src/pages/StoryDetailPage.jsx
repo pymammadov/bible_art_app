@@ -28,7 +28,6 @@ function LoadingStory() {
       <section className="animate-pulse rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="h-3 w-28 rounded bg-slate-200" />
         <div className="mt-3 h-7 w-2/3 rounded bg-slate-200" />
-        <div className="mt-2 h-4 w-40 rounded bg-slate-200" />
         <div className="mt-4 h-4 w-full rounded bg-slate-200" />
         <div className="mt-2 h-4 w-5/6 rounded bg-slate-200" />
       </section>
@@ -105,9 +104,7 @@ export default function StoryDetailPage() {
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{story.testament}</div>
         <h1 className="mt-1 text-2xl font-bold">{story.title}</h1>
-        <p className="mt-1 text-sm text-slate-600">{story.scripture_reference}</p>
-        <p className="mt-4 text-slate-700">{story.summary}</p>
-        <p className="mt-3 text-slate-600">{story.description}</p>
+        <p className="mt-4 text-slate-700">{story.summary || 'No summary available.'}</p>
       </section>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -116,7 +113,9 @@ export default function StoryDetailPage() {
           items={story.relationships?.characters || []}
           renderItem={(character) => (
             <>
-              <p className="font-medium text-slate-900">{character.name}</p>
+              <Link to={`/characters/${character.id}`} className="font-medium text-indigo-600 hover:underline">
+                {character.name}
+              </Link>
               <p className="text-slate-600">{character.description}</p>
             </>
           )}
@@ -126,8 +125,10 @@ export default function StoryDetailPage() {
           items={story.relationships?.locations || []}
           renderItem={(location) => (
             <>
-              <p className="font-medium text-slate-900">{location.name}</p>
-              <p className="text-slate-600">{location.region}</p>
+              <Link to={`/locations/${location.id}`} className="font-medium text-indigo-600 hover:underline">
+                {location.name}
+              </Link>
+              <p className="text-slate-600">{location.description}</p>
             </>
           )}
         />
@@ -136,7 +137,9 @@ export default function StoryDetailPage() {
           items={story.relationships?.artworks || []}
           renderItem={(artwork) => (
             <>
-              <p className="font-medium text-slate-900">{artwork.title}</p>
+              <Link to={`/artworks/${artwork.id}`} className="font-medium text-indigo-600 hover:underline">
+                {artwork.title}
+              </Link>
               <p className="text-slate-600">
                 {artwork.artist} {artwork.year ? `(${artwork.year})` : ''}
               </p>
