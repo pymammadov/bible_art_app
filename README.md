@@ -265,7 +265,21 @@ Frontend URL: `http://127.0.0.1:5173`
 ### API configuration
 
 Frontend reads API base URL from `VITE_API_BASE_URL`.
-If not set, it defaults to `http://127.0.0.1:8000`.
+
+1. Copy the template once:
+
+```bash
+cd frontend
+cp .env.example .env.local
+```
+
+2. Set `VITE_API_BASE_URL`:
+   - local dev: `http://127.0.0.1:8000`
+   - GitHub Codespaces: `https://<codespace-name>-8000.app.github.dev`
+
+If `VITE_API_BASE_URL` is missing, the frontend safely falls back to:
+- Codespaces inferred URL (`https://<codespace-name>-8000.app.github.dev`) when running on `*.app.github.dev`
+- otherwise `http://127.0.0.1:8000`
 
 Quick run example:
 
@@ -273,13 +287,7 @@ Quick run example:
 VITE_API_BASE_URL=http://127.0.0.1:8000 npm run dev
 ```
 
-Optional `.env.local` in `frontend/`:
-
-```bash
-VITE_API_BASE_URL=http://127.0.0.1:8000
-```
-
-The frontend now includes request timeout handling, more descriptive API error messages,
+The frontend includes request timeout handling, API URL-aware error messages,
 and a global error boundary to reduce blank-screen failures.
 
 
@@ -307,32 +315,39 @@ and a global error boundary to reduce blank-screen failures.
 
 ## GitHub Codespaces usage
 
-When frontend and backend are exposed on different forwarded URLs, configure both API base URL and CORS:
+Use two terminals in Codespaces.
 
-1. Start backend in one terminal:
+1. **Start backend** (Terminal A, repo root):
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 CORS_ALLOW_ORIGIN_REGEX='https://.*\.app\.github\.dev' uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```
 
-Alternative (most permissive for development only):
-
-```bash
-CORS_DEV_MODE=true uvicorn backend.main:app --host 0.0.0.0 --port 8000
-```
-
-2. Start frontend in another terminal:
+2. **Start frontend** (Terminal B):
 
 ```bash
 cd frontend
 npm install
-VITE_API_BASE_URL=<YOUR_BACKEND_CODESPACES_URL> npm run dev -- --host 0.0.0.0 --port 5173
+cp .env.example .env.local
 ```
 
-Example backend URL shape:
+Edit `frontend/.env.local` and set:
 
-```text
-https://<codespace-name>-8000.app.github.dev
+```bash
+VITE_API_BASE_URL=https://<codespace-name>-8000.app.github.dev
 ```
 
-This setup avoids browser CORS-related `Failed to fetch` errors when ports use different origins.
+Then run:
+
+```bash
+npm run dev -- --host 0.0.0.0 --port 5173
+```
+
+3. **Open forwarded ports**:
+   - frontend: `https://<codespace-name>-5173.app.github.dev` (or 5174)
+   - backend: `https://<codespace-name>-8000.app.github.dev`
+
+If stories fail to load, check the in-app error panel. It now shows the exact API URL being used so misconfigured `VITE_API_BASE_URL` is easy to spot.
