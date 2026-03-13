@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import sqlite3
-from pathlib import Path
 
 from database.seed_data import populate_database
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "database" / "bible_art.db"
+from .config import get_auto_seed_db, get_database_path
+
+DB_PATH = get_database_path()
 
 
 def initialize_db() -> None:
@@ -14,7 +14,13 @@ def initialize_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     if DB_PATH.exists():
         return
-    populate_database()
+
+    if not get_auto_seed_db():
+        raise RuntimeError(
+            f"Database not found at {DB_PATH}. Set AUTO_SEED_DB=true for first deploy or provision the DB file manually."
+        )
+
+    populate_database(target_db_path=DB_PATH)
 
 
 def get_connection() -> sqlite3.Connection:
