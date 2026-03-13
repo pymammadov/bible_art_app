@@ -48,6 +48,21 @@ npm run dev
 
 ---
 
+## GitHub Actions workflows
+
+After merging to `main`, GitHub Actions should include:
+
+- `Bible Art CI`
+- `deploy backend to Render`
+- `deploy frontend to Vercel`
+
+Required repository secrets:
+
+- Backend deploy: `RENDER_DEPLOY_HOOK_URL`, `RENDER_HEALTHCHECK_URL`
+- Frontend deploy: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `VITE_API_BASE_URL`
+
+---
+
 ## Production deployment (Render + Vercel)
 
 ## 1) Backend on Render (Web Service)
