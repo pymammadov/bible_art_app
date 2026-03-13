@@ -14,105 +14,153 @@ Bible Art App is a full-stack MVP for exploring links between biblical stories, 
 ## Project Structure
 
 - `backend/` FastAPI application and API routes
-- `database/` SQLite file + seed SQL
+- `database/` SQLite schema + seed SQL/data
 - `frontend/` React client
-- `scripts/` operational scripts (seed/reseed/validation/ingestion stub)
-- `README.md`
-- `requirements.txt`
-- `.gitignore`
+- `scripts/` operational scripts (seed/reseed/validation/smoke tests)
+- `render.yaml` Render service + persistent disk blueprint
 
-## One-command local run (recommended)
+## Local development
 
-This repository includes a minimal FastAPI backend and a reseedable SQLite dataset for stories, characters, locations, and artworks.
-
-
-## Development startup script
-
-From the repository root, run:
+### One-command startup
 
 ```bash
 bash scripts/dev.sh
 ```
 
-This installs backend/frontend dependencies, starts FastAPI on port `8000`, and starts Vite on port `5173`.
+This installs backend/frontend dependencies, starts FastAPI on `8000`, and starts Vite on `5173`.
 
-Vite now proxies frontend API calls from `/api/*` to `http://127.0.0.1:8000`, so local/Codespaces dev does not require setting `VITE_API_BASE_URL` or debugging CORS for normal development.
-
-
-
-## Frontend API proxy (development)
-
-During local development (`npm run dev`), the frontend calls relative endpoints such as `/api/stories`.
-Vite forwards these to the backend on port `8000`.
-
-For deployed environments, you can still set `VITE_API_BASE_URL` to a full backend URL if needed.
-
-## Run backend locally
-
-### 1) Install dependencies
+### Backend only
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-### 2) Reseed the database
-
-From the repository root:
-
-```bash
-python -m database.seed_data
-```
-
-This command recreates `database/bible_art.db` from schema + seed data.
-
-### 3) Start the API
-
-```bash
 uvicorn backend.main:app --reload
 ```
 
-The API will be available at:
-- `http://127.0.0.1:8000`
-- interactive docs at `http://127.0.0.1:8000/docs`
+### Frontend only
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+---
+
+## Production deployment (Render + Vercel)
+
+## 1) Backend on Render (Web Service)
+
+Use `render.yaml` (Blueprint deploy) or configure manually.
+
+### Render settings
+
+- Runtime: Python
+- Build command: `pip install -r requirements.txt`
+- Start command: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+- Health check path: `/health`
+- Persistent disk:
+  - Name: `bible-art-data`
+  - Mount path: `/var/data`
+  - Size: 1 GB
+
+### Backend environment variables
+
+- `DATABASE_PATH=/var/data/bible_art.db`
+- `AUTO_SEED_DB=true` (first deploy only)
+- `ALLOWED_ORIGINS=https://<your-vercel-domain>`
+
+### First deploy vs later deploys
+
+- First successful deploy: keep `AUTO_SEED_DB=true` so Render initializes and seeds the DB when `/var/data/bible_art.db` is absent.
+- After seed is complete and service is healthy: set `AUTO_SEED_DB=false` to avoid accidental reseeding behavior on unexpected disk events.
+
+### Health check
+
+```bash
+curl https://<your-render-service>.onrender.com/health
+# expected: {"status":"ok"}
+```
+
+## 2) Frontend on Vercel
+
+Set the Vercel project **Root Directory** to `frontend`.
+
+### Vercel settings
+
+- Framework preset: Vite
+- Build command: `npm run build`
+- Output directory: `dist`
+
+### Frontend environment variable
+
+- `VITE_API_BASE_URL=https://<your-render-service>.onrender.com`
+
+The app uses this value in production requests. Local development can continue using Vite `/api` proxy.
+
+## 3) CORS alignment
+
+Set backend `ALLOWED_ORIGINS` to the exact deployed frontend origins, comma-separated if multiple:
+
+```env
+ALLOWED_ORIGINS=https://your-app.vercel.app,https://www.yourdomain.com
+```
+
+---
+
+## Smoke test checklist (post-deploy)
+
+Use the included script:
+
+```bash
+bash scripts/smoke_test.sh https://<frontend-domain> https://<backend-domain>
+```
+
+This validates:
+- `GET /health` returns `{"status":"ok"}`
+- stories list endpoint responds with data
+- one story detail endpoint responds
+- frontend homepage responds
+- CORS preflight allows frontend origin
+
+---
+
+## Rollback notes
+
+### Backend rollback (Render)
+
+- Use Render dashboard -> Deploys -> rollback to last healthy deploy.
+- Keep the same persistent disk mounted so SQLite data survives code rollback.
+
+### Frontend rollback (Vercel)
+
+- Use Vercel dashboard -> Deployments -> promote previous successful deployment.
+
+### Data rollback
+
+- SQLite lives on Render disk at `/var/data/bible_art.db`.
+- Snapshot/download before risky changes.
+
+---
 
 ## API endpoints
 
-All endpoints return JSON.
-
 ### Stories
 - `GET /stories`
-  - Optional filters: `testament`, `character_id`, `location_id`, `artwork_id`
 - `GET /stories/{id}`
 
 ### Characters
 - `GET /characters`
-  - Optional filters: `story_id`, `name`
 - `GET /characters/{id}`
 
 ### Locations
 - `GET /locations`
-  - Optional filters: `story_id`, `name`
 - `GET /locations/{id}`
 
 ### Artworks
 - `GET /artworks`
-  - Optional filters: `story_id`, `artist`
 - `GET /artworks/{id}`
 
-Seeded artwork rows include `title`, `artist`, `year`, `museum`, and `related_story_id`.
-
-Each resource includes a `relationships` object so clients can navigate connected entities.
-
-## Frontend routes
-
-The React app includes browse + detail pages for each main entity:
-
-- `/` stories list
-- `/stories/:storyId` story detail with linked characters, locations, and artworks
-- `/characters` and `/characters/:characterId`
-- `/locations` and `/locations/:locationId`
-- `/artworks` and `/artworks/:artworkId`
-
-All pages use the FastAPI endpoints above and render loading, error, and empty states.
+### Health
+- `GET /health`
