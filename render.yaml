@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: bible-art-api
+    runtime: python
+    plan: starter
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_PATH
+        value: /var/data/bible_art.db
+      - key: AUTO_SEED_DB
+        value: "true"
+      - key: ALLOWED_ORIGINS
+        sync: false
+    disks:
+      - name: bible-art-data
+        mountPath: /var/data
+        sizeGB: 1

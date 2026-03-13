@@ -144,13 +144,19 @@ def validate_seed_data() -> None:
             )
 
 
-def populate_database() -> None:
+def populate_database(target_db_path: Path | None = None) -> None:
     validate_seed_data()
     schema_sql = SCHEMA_PATH.read_text(encoding="utf-8")
+    db_path = target_db_path or DB_PATH
 
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(db_path) as conn:
         conn.execute("PRAGMA foreign_keys = ON;")
         conn.executescript(schema_sql)
+
+        existing_story_count = conn.execute("SELECT COUNT(*) FROM stories").fetchone()[0]
+        if existing_story_count > 0:
+            conn.commit()
+            return
 
         conn.executemany(
             "INSERT INTO stories (title, testament, summary) VALUES (?, ?, ?)",
